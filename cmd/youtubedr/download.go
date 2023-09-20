@@ -22,9 +22,10 @@ var downloadCmd = &cobra.Command{
 }
 
 var (
-	ffmpegCheck error
-	outputFile  string
-	outputDir   string
+	ffmpegCheck        error
+	outputFile         string
+	outputDir          string
+	downloadTranscript bool
 )
 
 func init() {
@@ -32,6 +33,7 @@ func init() {
 
 	downloadCmd.Flags().StringVarP(&outputFile, "filename", "o", "", "The output file, the default is genated by the video title.")
 	downloadCmd.Flags().StringVarP(&outputDir, "directory", "d", ".", "The output directory.")
+	downloadCmd.Flags().BoolVarP(&downloadTranscript, "transcript", "t", false, "Download the transcript only")
 	addQualityFlag(downloadCmd.Flags())
 	addMimeTypeFlag(downloadCmd.Flags())
 }
@@ -42,8 +44,6 @@ func download(id string) error {
 		return err
 	}
 
-	log.Println("download to directory", outputDir)
-
 	if strings.HasPrefix(outputQuality, "hd") {
 		if err := checkFFMPEG(); err != nil {
 			return err
@@ -51,6 +51,12 @@ func download(id string) error {
 		return downloader.DownloadComposite(context.Background(), outputFile, video, outputQuality, mimetype)
 	}
 
+	if downloadTranscript {
+		log.Println("download transcript to directory", outputDir)
+		return downloader.DownloadTranscript(context.Background(), video, outputFile, "")
+	}
+
+	log.Println("download to directory", outputDir)
 	return downloader.Download(context.Background(), video, format, outputFile)
 }
 

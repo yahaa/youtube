@@ -35,6 +35,31 @@ func (dl *Downloader) getOutputFile(v *youtube.Video, format *youtube.Format, ou
 	return outputFile, nil
 }
 
+func (dl *Downloader) DownloadTranscript(ctx context.Context, v *youtube.Video, outputFile, ext string) error {
+	if ext == "" {
+		ext = ".txt"
+	}
+
+	if outputFile == "" {
+		outputFile = SanitizeFilename(v.Title)
+		outputFile += ext
+	}
+
+	if dl.OutputDir != "" {
+		if err := os.MkdirAll(dl.OutputDir, 0o755); err != nil {
+			return err
+		}
+		outputFile = filepath.Join(dl.OutputDir, outputFile)
+	}
+
+	ts, err := dl.GetTranscript(v)
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(outputFile, []byte(ts.String()), 0664)
+}
+
 // Download : Starting download video by arguments.
 func (dl *Downloader) Download(ctx context.Context, v *youtube.Video, format *youtube.Format, outputFile string) error {
 	youtube.Logger.Info(
